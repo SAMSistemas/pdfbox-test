@@ -1,119 +1,126 @@
+import java.io.*;
+import org.apache.pdfbox.pdfparser.*;
+import org.apache.pdfbox.pdmodel.*;
+import org.apache.pdfbox.pdmodel.common.*;
 import org.apache.jempbox.xmp.XMPMetadata;
-import org.apache.pdfbox.exceptions.COSVisitorException;
-import org.apache.pdfbox.pdfparser.PDFParser;
-import org.apache.pdfbox.pdmodel.PDDocument;
-import org.apache.pdfbox.pdmodel.PDDocumentCatalog;
-import org.apache.pdfbox.pdmodel.common.PDMetadata;
-import org.w3c.dom.Document;
-import org.xml.sax.SAXException;
-
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
-import javax.xml.parsers.ParserConfigurationException;
-import javax.xml.transform.TransformerException;
-import java.io.*;
+import org.w3c.dom.Document;
 
-/**
- * Created by santiago.pereztorre on 08/05/2015.
- */
-public class WriteMetadata {
 
-    public static void main(String[] args)
+public class WriteMetadata
+{
+
+    static public void main(String args[])
     {
-        DocumentBuilderFactory f= DocumentBuilderFactory.newInstance();
-        f.setExpandEntityReferences(true);
-        f.setIgnoringComments(true);
-        f.setIgnoringElementContentWhitespace(true);
-        f.setValidating(false);
-        f.setCoalescing(true);
-        f.setNamespaceAware(true);
-        DocumentBuilder builder= null;
-        try {
-            builder = f.newDocumentBuilder();
-        } catch (ParserConfigurationException e) {
-            e.printStackTrace();
-        }
-        Document xmpDoc = null;
-        try {
-            xmpDoc = builder.parse(new File(args[1]));
-        } catch (SAXException e) {
-            e.printStackTrace();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-
-        InputStream in= null;
-        try {
-            in = new FileInputStream(args[0]);
-        } catch (FileNotFoundException e) {
-            e.printStackTrace();
-        }
-        PDFParser parser= null;
-        try {
-            parser = new PDFParser(in);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-        try {
-            parser.parse();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-        PDDocument document = null;
-        try {
-            document=  parser.getPDDocument();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-        PDDocumentCatalog cat = document.getDocumentCatalog();
-        PDMetadata metadata = new PDMetadata(document);
-        try {
-            metadata.importXMPMetadata(new XMPMetadata(xmpDoc));
-        } catch (IOException e) {
-            e.printStackTrace();
-        } catch (TransformerException e) {
-            e.printStackTrace();
-        }
-        cat.setMetadata(metadata);
-        try {
-            document.save(args[2]);
-        } catch (IOException e) {
-            e.printStackTrace();
-        } catch (COSVisitorException e) {
-            e.printStackTrace();
-        }
-
-
-        InputStream in1= null;
-        try {
-            in1 = new FileInputStream(args[2]);
-        } catch (FileNotFoundException e) {
-            e.printStackTrace();
-        }
-        PDFParser parser1= null;
-        try {
-            parser1 = new PDFParser(in1);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-        try {
-            parser1.parse();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-        PDMetadata metadata2 = null;
-        try {
-            metadata2 = parser.getPDDocument().getDocumentCatalog().getMetadata();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-        if(metadata!=null)
+        PDDocument document=null;
+        InputStream in=null;
+        try
         {
-            try {
-                System.out.println(metadata2.getInputStreamAsString());
-            } catch (IOException e) {
-                e.printStackTrace();
+            String xmpIn=null;
+            String pdfIn=null;
+            String pdfOut=null;
+            Document xmpDoc=null;
+            int optind=0;
+            while(optind<args.length)
+            {
+                if(args[optind].equals("-h"))
+                {
+                    System.err.println("Pierre Lindenbaum PhD. 2010");
+                    System.err.println("-h this screen");
+                    System.err.println("-pdfin|-i <pdf-in>");
+                    System.err.println("-xmpin|-x <xmp-in>");
+                    System.err.println("-pdfout|-o <pdf-out>");
+                    return;
+                }
+                else if(args[optind].equals("-xmpin") || args[optind].equals("-x"))
+                {
+                    xmpIn= args[++optind];
+                }
+                else if(args[optind].equals("-pdfin") || args[optind].equals("-i"))
+                {
+                    pdfIn= args[++optind];
+                }
+                else if(args[optind].equals("-pdfout") || args[optind].equals("-o"))
+                {
+                    pdfOut= args[++optind];
+                }
+                else if (args[optind].equals("--"))
+                {
+                    ++optind;
+                    break;
+                }
+                else if (args[optind].startsWith("-"))
+                {
+                    System.err.println("bad argument " + args[optind]);
+                    System.exit(-1);
+                }
+                else
+                {
+                    break;
+                }
+                ++optind;
             }
+            if(optind!=args.length)
+            {
+                System.err.println("Illegal number of arguments");
+                return;
+            }
+            if(pdfIn==null)
+            {
+                System.err.println("pdf-in missing");
+                return;
+            }
+            if(pdfOut==null)
+            {
+                System.err.println("pdf-out missing");
+                return;
+            }
+            if(pdfIn.equals(pdfOut))
+            {
+                System.err.println("pdf-out is same as pdf-in");
+                return;
+            }
+            if(xmpIn==null)
+            {
+                System.err.println("XMP missing");
+                return;
+            }
+            else
+            {
+                DocumentBuilderFactory f= DocumentBuilderFactory.newInstance();
+                f.setExpandEntityReferences(true);
+                f.setIgnoringComments(true);
+                f.setIgnoringElementContentWhitespace(true);
+                f.setValidating(false);
+                f.setCoalescing(true);
+                f.setNamespaceAware(true);
+                DocumentBuilder builder=f.newDocumentBuilder();
+                xmpDoc= builder.parse(xmpIn);
+            }
+
+            in=new FileInputStream(pdfIn);
+            PDFParser parser=new PDFParser(in);
+            parser.parse();
+            document=  parser.getPDDocument();
+            if(document.isEncrypted())
+            {
+                System.err.println("Warning ! Document is Encrypted!");
+            }
+            PDDocumentCatalog cat = document.getDocumentCatalog();
+            PDMetadata metadata = new PDMetadata(document);
+            metadata.importXMPMetadata(new XMPMetadata(xmpDoc));
+            cat.setMetadata(metadata);
+            document.save(pdfOut);
+        }
+        catch(Throwable err)
+        {
+            err.printStackTrace();
+        }
+        finally
+        {
+            if(document!=null) try { document.close();} catch(Throwable err2) {}
+            if(in!=null) try { in.close();} catch(Throwable err2) {}
         }
     }
 }
