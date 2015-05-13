@@ -1,6 +1,5 @@
 import java.io.*;
 
-import com.sun.org.apache.xerces.internal.parsers.DOMParser;
 import org.apache.pdfbox.pdfparser.*;
 import org.apache.pdfbox.pdmodel.*;
 import org.apache.pdfbox.pdmodel.common.*;
@@ -9,7 +8,6 @@ import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.DocumentBuilder;
 import org.w3c.dom.Document;
 import org.w3c.dom.NodeList;
-import org.w3c.dom.Node;
 import org.w3c.dom.Element;
 
 
@@ -37,7 +35,7 @@ public class ReadMetadata
                 // Levantamos la MetaData
                 DocumentBuilderFactory dbFactory = DocumentBuilderFactory.newInstance();
                 DocumentBuilder dBuilder = dbFactory.newDocumentBuilder();
-                Document doc = dBuilder.parse(new ByteArrayInputStream(metadata.getInputStreamAsString().getBytes()));
+                Document doc = dBuilder.parse(metadata.createInputStream());
 
                 // Buscamos el tag de SEmployee y el Element -> CUIT
                 NodeList nList = doc.getElementsByTagName("foaf:SEmployee");
